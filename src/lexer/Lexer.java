@@ -1,23 +1,26 @@
 package lexer;
 
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
 public class Lexer {
-    private char peek = ' ';
-    private int peek_byte = 0;
-    private int line = 1;
+    public List<Token> usedTokens = new LinkedList<>();
+    public char peek = ' ';
+    public int peek_byte = 0;
+    public int line = 1;
 
-    private void read() throws IOException {
+    public void read() throws IOException {
         peek_byte = System.in.read();
         peek = (char) peek_byte;
     }
 
-    private boolean read(char c) throws IOException {
+    public boolean read(char c) throws IOException {
         read();
         return c == peek;
     }
 
-    //Tommorow we will evaluate double chars and complete the lexer
+    //Tomorrow we will evaluate double chars and complete the lexer
     public void scan() throws IOException {
         while (peek == ' ' || peek == '\t') {
             read();
@@ -32,58 +35,101 @@ public class Lexer {
                 line = line + 1;
             }
 
-            //Check if peek is a special charahcter
+            //Check if peek is a special character
             switch (peek) {
                 case '&':
                     if (read('&')) {
-                        System.out.println("&&");
+                        usedTokens.add(new SpecialCharachter(Tag.AND, "&&"));
                     } else {
-                        System.out.println("&");
+                        throw  new IllegalStateException("& is not a token");
                     }
                     break;
                 case '|':
                     if (read('|')) {
-                        System.out.println("||");
+                        usedTokens.add(new SpecialCharachter(Tag.OR, "||"));
                     } else {
-                        System.out.println("|");
+                        throw  new IllegalStateException("| is not a valid token");
+
                     }
                     break;
                 case '+':
-                    System.out.println("+");
+                    if (read('+')) {
+                        usedTokens.add( new SpecialCharachter(Tag.INCREMENT, "++"));
+                    } else {
+                        usedTokens.add( new SpecialCharachter(Tag.PLUS, "+"));
+                        continue;
+                    }
                     break;
                 case '-':
-                    System.out.println("-");
+                    if (read('-')) {
+                        usedTokens.add(new SpecialCharachter(Tag.DECREMENT, "--"));
+                    } else {
+                        usedTokens.add( new SpecialCharachter(Tag.MINUS, "-"));
+                        continue;
+                    }
                     break;
                 case '/':
-                    System.out.println("/");
+                    usedTokens.add( new SpecialCharachter(Tag.DIVIDE, "/"));
                     break;
                 case '*':
-                    System.out.println("*");
+                    usedTokens.add( new SpecialCharachter(Tag.MULTIPLY, "*"));
                     break;
                 case '=':
-                    System.out.println("=");
+                    usedTokens.add( new SpecialCharachter(Tag.ASSIGNMENT, "="));
                     break;
                 case '(':
-                    System.out.println("(");
+                    usedTokens.add( new SpecialCharachter(Tag.BR_OP, "("));
                     break;
                 case ')':
-                    System.out.println(")");
+                    usedTokens.add( new SpecialCharachter(Tag.BR_CL, ")"));
                     break;
                 case ';':
-                    System.out.println(';');
+                    usedTokens.add( new SpecialCharachter(Tag.SEMICOLON, ";"));
                     break;
             }
 
-            //Check if peek is a number
             if (Character.isDigit(peek)) {
-                System.out.println(peek);
+                int whole = 0;
+
+                //Check if peek is a number
+                do {
+                    whole = (10 * whole) + Character.digit(peek, 10);
+                    read();
+                } while (Character.isDigit(peek));
+
+                if (peek != '.') {
+                    System.out.println("WHOLE INSIDE IF: " + whole);
+                    System.out.println("LENG" + usedTokens.size());
+                    usedTokens.add( new RealNumber(Tag.CONSTANT, whole));
+
+                    continue;
+                }
+                float real = whole;
+                float divisor = 10;
+                read();
+
+                while (Character.isDigit(peek)) {
+                    real = real + (Character.digit(peek, 10) / divisor);
+                    divisor = divisor * 10;
+                    read();
+                }
+                usedTokens.add( new FloatNumber(Tag.CONSTANT, real));
+                continue;
             }
 
             //Check if peek is an alphabet
             if (Character.isAlphabetic(peek)) {
-                System.out.println(peek);
+                String variableName = "";
+
+                do {
+                    variableName = variableName + peek;
+                    read();
+                }while (Character.isLetterOrDigit(peek));
+                usedTokens.add(new Variable(variableName, Tag.ID));
             }
             read();
         }
+        System.out.println("Tokens");
+        usedTokens.forEach(System.out::println);
     }
 }
