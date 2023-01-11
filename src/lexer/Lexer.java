@@ -21,7 +21,7 @@ public class Lexer {
     }
 
     //Tomorrow we will evaluate double chars and complete the lexer
-    public void scan() throws IOException {
+    public List<Token> scan() throws IOException {
         while (peek == ' ' || peek == '\t') {
             read();
         }
@@ -98,8 +98,6 @@ public class Lexer {
                 } while (Character.isDigit(peek));
 
                 if (peek != '.') {
-                    System.out.println("WHOLE INSIDE IF: " + whole);
-                    System.out.println("LENG" + usedTokens.size());
                     usedTokens.add( new RealNumber(Tag.CONSTANT, whole));
 
                     continue;
@@ -129,7 +127,10 @@ public class Lexer {
             }
             read();
         }
-        System.out.println("Tokens");
+        System.out.println("Lexer Output:");
+        System.out.println("=============");
         usedTokens.forEach(System.out::println);
+        return usedTokens;
     }
+
 }
