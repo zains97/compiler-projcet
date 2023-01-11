@@ -1,11 +1,11 @@
 package lexer;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.LinkedList;
+import java.util.List;
 
 public class Lexer {
-    public Map<String, Token> usedTokens = new LinkedHashMap<>();
+    public List<Token> usedTokens = new LinkedList<>();
     public char peek = ' ';
     public int peek_byte = 0;
     public int line = 1;
@@ -39,67 +39,52 @@ public class Lexer {
             switch (peek) {
                 case '&':
                     if (read('&')) {
-                        usedTokens.put("AND", new SpecialCharachter(Tag.AND, "&&"));
-                        System.out.println("&&");
+                        usedTokens.add(new SpecialCharachter(Tag.AND, "&&"));
                     } else {
-                        usedTokens.put("AMPERSAND", new Token('&'));
-                        System.out.println("&");
-                        continue;
+                        throw  new IllegalStateException("& is not a token");
                     }
                     break;
                 case '|':
                     if (read('|')) {
-                        usedTokens.put("OR", new SpecialCharachter(Tag.OR, "||"));
-                        System.out.println("||");
+                        usedTokens.add(new SpecialCharachter(Tag.OR, "||"));
                     } else {
-                        usedTokens.put("PIPE", new Token('|'));
-                        System.out.println("|");
-                        continue;
+                        throw  new IllegalStateException("| is not a valid token");
+
                     }
                     break;
                 case '+':
                     if (read('+')) {
-                        usedTokens.put("INCREMENT", new SpecialCharachter(Tag.INCREMENT, "++"));
-                        System.out.println("++");
+                        usedTokens.add( new SpecialCharachter(Tag.INCREMENT, "++"));
                     } else {
-                        System.out.println("+");
-                        usedTokens.put("PLUS", new Token('+'));
+                        usedTokens.add( new SpecialCharachter(Tag.PLUS, "+"));
                         continue;
                     }
                     break;
                 case '-':
                     if (read('-')) {
-                        usedTokens.put("DECREMENT", new SpecialCharachter(Tag.DECREMENT, "--"));
-                        System.out.println("--");
+                        usedTokens.add(new SpecialCharachter(Tag.DECREMENT, "--"));
                     } else {
-                        usedTokens.put("MINUS", new Token('-'));
-                        System.out.println("-");
+                        usedTokens.add( new SpecialCharachter(Tag.MINUS, "-"));
                         continue;
                     }
                     break;
                 case '/':
-                    usedTokens.put("DIVIDE", new Token('/'));
-                    System.out.println("/");
+                    usedTokens.add( new SpecialCharachter(Tag.DIVIDE, "/"));
                     break;
                 case '*':
-                    usedTokens.put("MULTIPLE", new Token('*'));
-                    System.out.println("*");
+                    usedTokens.add( new SpecialCharachter(Tag.MULTIPLY, "*"));
                     break;
                 case '=':
-                    usedTokens.put("ASSIGNMENT", new Token('='));
-                    System.out.println("=");
+                    usedTokens.add( new SpecialCharachter(Tag.ASSIGNMENT, "="));
                     break;
                 case '(':
-                    usedTokens.put("BR_OP", new Token('('));
-                    System.out.println("(");
+                    usedTokens.add( new SpecialCharachter(Tag.BR_OP, "("));
                     break;
                 case ')':
-                    usedTokens.put("BR_CL", new Token(')'));
-                    System.out.println(")");
+                    usedTokens.add( new SpecialCharachter(Tag.BR_CL, ")"));
                     break;
                 case ';':
-                    usedTokens.put("SEMICOLON", new Token(';'));
-                    System.out.println(';');
+                    usedTokens.add( new SpecialCharachter(Tag.SEMICOLON, ";"));
                     break;
             }
 
@@ -113,27 +98,38 @@ public class Lexer {
                 } while (Character.isDigit(peek));
 
                 if (peek != '.') {
-                    usedTokens.put("CONSTANT: ", new RealNumber(Tag.CONSTANT, whole));
+                    System.out.println("WHOLE INSIDE IF: " + whole);
+                    System.out.println("LENG" + usedTokens.size());
+                    usedTokens.add( new RealNumber(Tag.CONSTANT, whole));
+
                     continue;
                 }
                 float real = whole;
-
+                float divisor = 10;
                 read();
 
                 while (Character.isDigit(peek)) {
-                    real = real + (Character.digit(peek, 10) / 10f);
+                    real = real + (Character.digit(peek, 10) / divisor);
+                    divisor = divisor * 10;
                     read();
                 }
-                usedTokens.put("CONSTANT", new FloatNumber(Tag.CONSTANT, real));
+                usedTokens.add( new FloatNumber(Tag.CONSTANT, real));
+                continue;
             }
 
             //Check if peek is an alphabet
             if (Character.isAlphabetic(peek)) {
-                System.out.println(peek);
+                String variableName = "";
+
+                do {
+                    variableName = variableName + peek;
+                    read();
+                }while (Character.isLetterOrDigit(peek));
+                usedTokens.add(new Variable(variableName, Tag.ID));
             }
             read();
         }
         System.out.println("Tokens");
-        usedTokens.forEach((x, y) -> System.out.println(x + " : " + y));
+        usedTokens.forEach(System.out::println);
     }
 }
